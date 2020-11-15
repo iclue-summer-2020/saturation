@@ -12,6 +12,7 @@
 
 namespace saturation {
 
+// `Int` is a type alias for non-negative integers.
 using Int = uint64_t;
 using Set = std::set<Int>;
 
@@ -25,6 +26,12 @@ Set Complement(const Set& I, const Int n);
 // define check(lam) to be the partition (a-lam_b, a-lam_{b-1}, ..., a-lam_1),
 // where lam_i = 0 for i > k.
 nlnum::Partition Check(const nlnum::Partition& lam, const Int a, const Int b);
+
+// Refer to the pdf.
+// We must ensure
+//   * X \subseteq Y \subseteq [4n],
+//   * b \in {0,2}.
+Set Chi(const Set& X, const Set& Y, const Int n, const Int b);
 
 }  // namespace saturation
 

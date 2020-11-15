@@ -13,6 +13,7 @@
 using nlnum::Partition;
 using saturation::Int;
 using saturation::Check;
+using saturation::Chi;
 using saturation::Complement;
 using saturation::Set;
 using saturation::Tau;
@@ -99,4 +100,69 @@ TEST_CASE("invalid partition", "[check]") {
   // Needs to be weakly decreasing.
   const Partition lam = {1, 2, 3, 4};
   REQUIRE_THROWS_AS(Check(lam, a, b), std::invalid_argument);
+}
+
+TEST_CASE("easy chi", "[chi]") {
+  const Int n = 2;
+  const Set X = {1, 2, 3};
+  const Set Y = {1, 2, 3, 4, 5};
+  const auto res = Chi(X, Y, n, 2);
+
+  REQUIRE(res.size() <= 4*n-Y.size()+X.size());
+  REQUIRE(res.size() == 3);
+
+  SECTION("containment of res in [4n-|Y|+|X|]") {
+    for (const auto& e : res) {
+      REQUIRE(e >= 1);
+      REQUIRE(e <= 4 * n - Y.size() + X.size());
+    }
+  }
+
+  REQUIRE(res == Set({1, 2, 3}));
+}
+
+TEST_CASE("tricky chi", "[chi]") {
+  const Int n = 2;
+  const Set X = {1, 3, 8};
+  const Set Y = {1, 2, 3, 7, 8};
+  const auto res = Chi(X, Y, n, 0);
+
+  REQUIRE(res.size() <= Y.size());
+  REQUIRE(res.size() == 3);
+
+  SECTION("containment of res in [|Y|]") {
+    for (const auto& e : res) {
+      REQUIRE(e >= 1);
+      REQUIRE(e <= Y.size());
+    }
+  }
+
+  REQUIRE(res == Set({1, 3, 5}));
+}
+
+TEST_CASE("X not in Y", "[chi]") {
+  const Int n = 2;
+  const Set X = {1, 3, 6, 8};
+  const Set Y = {1, 2, 3, 7, 8};
+  REQUIRE_THROWS(
+      Chi(X, Y, n, 0),
+      std::invalid_argument("X must be a subset of Y."));
+}
+
+TEST_CASE("Y not in [4n]", "[chi]") {
+  const Int n = 2;
+  const Set X = {1, 3, 8};
+  const Set Y = {1, 2, 3, 7, 8, 9};
+  REQUIRE_THROWS(
+      Chi(X, Y, n, 0),
+      std::invalid_argument("Y must be a subset of [4n]."));
+}
+
+TEST_CASE("b is invalid", "[chi]") {
+  const Int n = 2;
+  const Set X = {1, 3, 8};
+  const Set Y = {1, 2, 3, 7, 8};
+  REQUIRE_THROWS(
+      Chi(X, Y, n, 1),
+      std::invalid_argument("b must be either 0 or 2."));
 }

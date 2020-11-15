@@ -84,4 +84,43 @@ Partition Check(const Partition& lam, const Int a, const Int b) {
   return mu;
 }
 
+// Throw an exception if it is *not* the case that X \subseteq Y \subseteq [4n].
+void CheckContainment(const Set& X, const Set& Y, const Int n) {
+  for (const auto& y : Y) {
+    if (y < 1 || y > 4*n) {
+      throw std::invalid_argument("Y must be a subset of [4n].");
+    }
+  }
+
+  for (const auto& x : X) {
+    if (Y.find(x) == Y.end()) {
+      throw std::invalid_argument("X must be a subset of Y.");
+    }
+  }
+}
+
+Set Chi(const Set& X, const Set& Y, const Int n, const Int b) {
+  CheckContainment(X, Y, n);
+  if (b != 0 && b != 2) {
+    throw std::invalid_argument("b must be either 0 or 2.");
+  }
+
+  Set chi;
+  Int numElems = 0;
+
+  // O(n*lg n).
+  for (size_t i = 1; i <= 4*n; ++i) {
+    if (X.find(i) != X.end()) {
+      ++numElems;
+      chi.insert(numElems);
+    } else if (Y.find(i) != Y.end()) {
+      if (b == 0) ++numElems;
+    } else {
+      if (b == 2) ++numElems;
+    }
+  }
+
+  return chi;
+}
+
 }  // namespace saturation
