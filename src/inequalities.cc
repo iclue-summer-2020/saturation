@@ -22,7 +22,7 @@ namespace saturation {
 
 using nlnum::Partition;
 
-Partition tau(const Set& I) {
+Partition Tau(const Set& I) {
   const size_t r = I.size();
 
   Partition ss{I.begin(), I.end()};
@@ -40,7 +40,7 @@ Partition tau(const Set& I) {
   return tt;
 }
 
-Set complement(const Set& I, const Int n) {
+Set Complement(const Set& I, const Int n) {
   for (const auto& i : I) {
     if (i > 4*n) throw std::invalid_argument("I must be a subset of [4n].");
   }
@@ -63,7 +63,7 @@ bool IsInside(const Partition& lam, const Partition& mu) {
   return true;
 }
 
-Partition check(const Partition& lam, const Int a, const Int b) {
+Partition Check(const Partition& lam, const Int a, const Int b) {
   nlnum::ValidatePartitions({ lam });
 
   Partition mu(b, a);
@@ -83,4 +83,5 @@ Partition check(const Partition& lam, const Int a, const Int b) {
   }
   return mu;
 }
+
 }  // namespace saturation
