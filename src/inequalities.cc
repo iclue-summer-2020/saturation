@@ -46,9 +46,11 @@ Set complement(const Set& I, const Int n) {
   }
 
   Set cI;
-  std::transform(I.begin(), I.end(), std::inserter(cI, cI.begin()), [&](const Int& i) -> Int {
-    return 4*n + 1 - i;
-  });
+  std::transform(
+      I.begin(), I.end(),
+      std::inserter(cI, cI.begin()),
+      [&](const Int& i) -> Int { return 4*n + 1 - i; });
+
   return cI;
 }
 
