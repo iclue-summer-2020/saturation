@@ -147,16 +147,15 @@ std::vector<std::pair<Set, Set>> Disjoints(const Int n, const Int r) {
 
   for (const auto& X : iter::combinations(R, r)) {
     const auto XX = Set(X.begin(), X.end());
-    const auto Xc = Bar(XX, n);
+    const auto bX = Bar(XX, n);
     Set Z;
     std::set_intersection(
-        XX.begin(), XX.end(),
-        Xc.begin(), Xc.end(),
+        XX.begin(), XX.end(), bX.begin(), bX.end(),
         std::inserter(Z, Z.begin())
     );
 
     if (Z.size() == 0) {
-      ans.emplace_back(XX, Xc);
+      ans.emplace_back(XX, bX);
     }
   }
 
