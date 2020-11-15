@@ -16,16 +16,35 @@ namespace saturation {
 using Int = uint64_t;
 using Set = std::set<Int>;
 
-struct Sets {
-    Set I, J, K, bI, bJ, bK;
-    Sets() {}
-    Sets(
-      const Set& I, const Set& J, const Set& K,
-      const Set& bI, const Set& bJ, const Set& bK
-    ) : I{I}, J{J}, K{K}, bI{bI}, bJ{bJ}, bK{bK} { }
+struct Triple {
+  nlnum::Partition la, mu, nu;
+  Triple(){};
+  Triple(const nlnum::Partition& la, const nlnum::Partition& mu,
+         const nlnum::Partition& nu)
+      : la{la}, mu{mu}, nu{nu} {}
 };
 
+struct Sets {
+  Set I, J, K, bI, bJ, bK;
+  Sets() {}
+  Sets(const Set& I, const Set& J, const Set& K, const Set& bI, const Set& bJ,
+       const Set& bK)
+      : I{I}, J{J}, K{K}, bI{bI}, bJ{bJ}, bK{bK} {}
+};
+
+struct CounterExample {
+  Triple triple;
+  Sets sets;
+  CounterExample() {}
+  CounterExample(const Triple& triple, const Sets& sets)
+      : triple{triple}, sets{sets} {}
+};
+
+std::ostream& operator<<(std::ostream&, const Triple&);
+
 std::ostream& operator<<(std::ostream&, const Sets&);
+
+std::ostream& operator<<(std::ostream&, const CounterExample&);
 
 // Computes the tau function defined in the pdf paper.
 nlnum::Partition Tau(const Set& I);
@@ -52,14 +71,14 @@ Set Complement(const Set& X, const Int n);
 
 // Determines whether or not the sets satisfy the saturation properties.
 // This function assumes the precomputation of the complement sets.
-bool IsGood(
-    const Int n, const Int r,
-    const Set& I, const Set& J, const Set& K,
-    const Set& bI, const Set& bJ, const Set& bK,
-    Sets* s);
+bool IsGood(const Int n, const Int r, const Set& I, const Set& J, const Set& K,
+            const Set& bI, const Set& bJ, const Set& bK, Sets* s);
 
 // Computes all of the sets in the saturation inequalities.
 std::vector<Sets> SatIneqs(const Int n, const Int r);
+
+// Returns all of the partition triples that do not satisfy the sat ineqs.
+std::vector<CounterExample> Flagger(const Int n, const Int r);
 
 }  // namespace saturation
 

@@ -15,6 +15,14 @@ namespace saturation {
 
 using nlnum::Partition;
 
+std::ostream& operator<<(std::ostream& os, const Triple& t) {
+  os << "Triple{"
+     << "la=" << t.la << ", "
+     << "mu=" << t.mu << ", "
+     << "nu=" << t.nu << "}";
+  return os;
+}
+
 std::ostream& operator<<(std::ostream& os, const Sets& s) {
   os << "Sets{"
      << "I=" << s.I << ", "
@@ -26,6 +34,9 @@ std::ostream& operator<<(std::ostream& os, const Sets& s) {
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const CounterExample& c) {
+  return os << "CounterExample{[" << c.triple << "], [" << c.sets << "]}";
+}
 
 Partition Tau(const Set& I) {
   const size_t r = I.size();
@@ -222,6 +233,63 @@ std::vector<Sets> SatIneqs(const Int n, const Int r) {
         if (IsGood(n, r, I, J, K, bI, bJ, bK, &s)) {
 #pragma omp critical
           ans.push_back(s);
+        }
+      }
+    }
+  }
+
+  return ans;
+}
+
+// Computes the sum of pi on the indices X \cap [2n].
+int64_t Sum(const nlnum::Partition& pi, const Set& X, const Int n) {
+  Int ans = 0;
+  for (Int ii : X) {
+    if (ii > pi.size() || pi[ii - 1] > 2 * n) continue;
+    ans += pi[ii - 1];
+  }
+  return static_cast<int64_t>(ans);
+}
+
+bool Satisfies(const Triple& triple, const std::vector<Sets>& satIneqs,
+               const Int n, Sets* sets) {
+  const auto la = triple.la;
+  const auto mu = triple.mu;
+  const auto nu = triple.nu;
+
+  for (const auto& ineq : satIneqs) {
+    const auto lhs =
+        (Sum(la, ineq.bI, n) - Sum(la, ineq.I, n) + Sum(mu, ineq.bJ, n) -
+         Sum(mu, ineq.J, n) + Sum(nu, ineq.bK, n) - Sum(nu, ineq.K, n));
+
+    if (lhs < 0) {
+      if (sets != nullptr) {
+        *sets = ineq;
+      }
+      return false;
+    }
+  }
+
+  return true;
+}
+
+std::vector<CounterExample> Flagger(const Int n, const Int r) {
+  const auto satIneqs = SatIneqs(n, r);
+  const auto iPars = nlnum::PartitionsIn(Partition(n, n), n);
+  std::vector<Partition> pars;
+  for (const auto& par : iPars) {
+    pars.push_back(par);
+  }
+
+  std::vector<CounterExample> ans;
+#pragma omp parallel for schedule(dynamic) shared(pars)
+  for (auto la = pars.begin(); la < pars.end(); ++la) {
+    for (auto mu = pars.begin(); mu < pars.end(); ++mu) {
+      for (auto nu = pars.begin(); nu < pars.end(); ++nu) {
+        Sets s;
+        if (!Satisfies({*la, *mu, *nu}, satIneqs, n, &s)) {
+#pragma omp critical
+          ans.emplace_back(Triple{*la, *mu, *nu}, s);
         }
       }
     }
