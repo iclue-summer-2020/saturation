@@ -60,7 +60,9 @@ TEST_CASE("normal complement", "[complement]") {
 TEST_CASE("invalid argument", "[complement]") {
   const Int n = 1;
   const Set I = {1, 2, 3, 4, 5};
-  REQUIRE_THROWS_AS(Complement(I, n), std::invalid_argument);
+  REQUIRE_THROWS(
+      Complement(I, n),
+      std::invalid_argument("I must be a subset of [4n]."));
 }
 
 TEST_CASE("easy check", "[check]") {
@@ -91,7 +93,9 @@ TEST_CASE("not contained check", "[check]") {
   const Int a = 3;
   const Int b = 3;
   const Partition lam = {4, 3, 2, 1};
-  REQUIRE_THROWS_AS(Check(lam, a, b), std::invalid_argument);
+  REQUIRE_THROWS(
+      Check(lam, a, b),
+      std::invalid_argument("lam must be inside the rectangle (a^b)."));
 }
 
 TEST_CASE("invalid partition", "[check]") {
@@ -99,7 +103,9 @@ TEST_CASE("invalid partition", "[check]") {
   const Int b = 7;
   // Needs to be weakly decreasing.
   const Partition lam = {1, 2, 3, 4};
-  REQUIRE_THROWS_AS(Check(lam, a, b), std::invalid_argument);
+  REQUIRE_THROWS(
+      Check(lam, a, b),
+      std::invalid_argument("Each partition must be weakly decreasing."));
 }
 
 TEST_CASE("easy chi", "[chi]") {
