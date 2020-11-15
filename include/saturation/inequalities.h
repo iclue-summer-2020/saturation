@@ -33,6 +33,9 @@ nlnum::Partition Check(const nlnum::Partition& lam, const Int a, const Int b);
 //   * b \in {0,2}.
 Set Chi(const Set& X, const Set& Y, const Int n, const Int b);
 
+// Returns all pairs (X, Y) of disjoint subsets of [4n] where |X|=r.
+std::vector<std::pair<Set, Set>> Disjoints(const Int n, const Int r);
+
 }  // namespace saturation
 
 #endif  // SATURATION_INEQUALITIES_H_

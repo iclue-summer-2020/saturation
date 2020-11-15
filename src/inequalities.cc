@@ -3,6 +3,7 @@
 #include <nlnum/nlnum.h>
 #include <combinations.hpp>
 #include <permutations.hpp>
+#include <powerset.hpp>
 #include <prettyprint.hpp>
 #include <product.hpp>
 #include <range.hpp>
@@ -122,5 +123,28 @@ Set Chi(const Set& X, const Set& Y, const Int n, const Int b) {
 
   return chi;
 }
+
+std::vector<std::pair<Set, Set>> Disjoints(const Int n, const Int r) {
+  const auto R = iter::range(1, static_cast<int32_t>(4*n+1));
+  const auto RR = Set{R.begin(), R.end()};
+  std::vector<std::pair<Set, Set>> ans;
+
+  for (const auto& X : iter::combinations(R, r)) {
+    Set Z;
+    std::set_difference(
+      RR.begin(), RR.end(),
+      X.begin(), X.end(),
+      std::inserter(Z, Z.begin()));
+
+    for (const auto& Y : iter::powerset(Z)) {
+      const auto XX = Set(X.begin(), X.end());
+      const auto YY = Set(Y.begin(), Y.end());
+      ans.emplace_back(XX, YY);
+    }
+  }
+
+  return ans;
+}
+
 
 }  // namespace saturation

@@ -15,6 +15,7 @@ using saturation::Int;
 using saturation::Check;
 using saturation::Chi;
 using saturation::Complement;
+using saturation::Disjoints;
 using saturation::Set;
 using saturation::Tau;
 
@@ -171,4 +172,24 @@ TEST_CASE("b is invalid", "[chi]") {
   REQUIRE_THROWS(
       Chi(X, Y, n, 1),
       std::invalid_argument("b must be either 0 or 2."));
+}
+
+TEST_CASE("easy disjoints", "[disjoints]") {
+  const Int n = 2;
+  const Int r = 3;
+  const auto& djs = Disjoints(n, r);
+
+  // (4n choose r) * 2^{4n-r}.
+  // So (8 choose 3) * 2^5 = 56 * 32 = 1792.
+  REQUIRE(djs.size() == 1792);
+}
+
+TEST_CASE("edge case", "[disjoints]") {
+  const Int n = 1;
+  const Int r = 4;
+  const auto& djs = Disjoints(n, r);
+
+  // (4n choose r) * 2^{4n-r}.
+  // So (4 choose 4) * 2^0 = 1.
+  REQUIRE(djs.size() == 1);
 }
