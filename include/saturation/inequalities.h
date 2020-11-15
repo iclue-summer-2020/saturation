@@ -16,11 +16,22 @@ namespace saturation {
 using Int = uint64_t;
 using Set = std::set<Int>;
 
+struct Sets {
+    Set I, J, K, bI, bJ, bK;
+    Sets() {}
+    Sets(
+      const Set& I, const Set& J, const Set& K,
+      const Set& bI, const Set& bJ, const Set& bK
+    ) : I{I}, J{J}, K{K}, bI{bI}, bJ{bJ}, bK{bK} { }
+};
+
+std::ostream& operator<<(std::ostream&, const Sets&);
+
 // Computes the tau function defined in the pdf paper.
 nlnum::Partition Tau(const Set& I);
 
-// For I \subset [4n], complement(I) = {4n+1-i|i\in I}.
-Set Complement(const Set& I, const Int n);
+// For I \subset [4n], bar(I) = {4n+1-i|i\in I}.
+Set Bar(const Set& I, const Int n);
 
 // For a partition lam = (lam_1, ..., lam_k) inside of the partition (a^b),
 // define check(lam) to be the partition (a-lam_b, a-lam_{b-1}, ..., a-lam_1),
@@ -33,8 +44,22 @@ nlnum::Partition Check(const nlnum::Partition& lam, const Int a, const Int b);
 //   * b \in {0,2}.
 Set Chi(const Set& X, const Set& Y, const Int n, const Int b);
 
-// Returns all pairs (X, Y) of disjoint subsets of [4n] where |X|=r.
+// Returns all pairs (X, Bar(X)) of disjoint subsets of [4n] where |X|=r.
 std::vector<std::pair<Set, Set>> Disjoints(const Int n, const Int r);
+
+// Returns [4n] - X.
+Set Complement(const Set& X, const Int n);
+
+// Determines whether or not the sets satisfy the saturation properties.
+// This function assumes the precomputation of the complement sets.
+bool IsGood(
+    const Int n, const Int r,
+    const Set& I, const Set& J, const Set& K,
+    const Set& bI, const Set& bJ, const Set& bK,
+    Sets* s);
+
+// Computes all of the sets in the saturation inequalities.
+std::vector<Sets> SatIneqs(const Int n, const Int r);
 
 }  // namespace saturation
 

@@ -2,26 +2,30 @@
 #include <saturation/inequalities.h>
 #include <nlnum/nlnum.h>
 #include <combinations.hpp>
-#include <permutations.hpp>
-#include <powerset.hpp>
 #include <prettyprint.hpp>
-#include <product.hpp>
 #include <range.hpp>
 
 #include <algorithm>
-#include <climits>
-#include <deque>
-#include <iterator>
-#include <iostream>
-#include <numeric>
+#include <cstdint>
 #include <ostream>
-#include <stack>
 #include <utility>
 #include <vector>
 
 namespace saturation {
 
 using nlnum::Partition;
+
+std::ostream& operator<<(std::ostream& os, const Sets& s) {
+  os << "Sets{"
+     << "I=" << s.I << ", "
+     << "J=" << s.J << ", "
+     << "K=" << s.K << ", "
+     << "bI=" << s.bI << ", "
+     << "bJ=" << s.bJ << ", "
+     << "bK=" << s.bK << "}";
+  return os;
+}
+
 
 Partition Tau(const Set& I) {
   const size_t r = I.size();
@@ -41,7 +45,7 @@ Partition Tau(const Set& I) {
   return tt;
 }
 
-Set Complement(const Set& I, const Int n) {
+Set Bar(const Set& I, const Int n) {
   for (const auto& i : I) {
     if (i > 4*n) throw std::invalid_argument("I must be a subset of [4n].");
   }
@@ -124,27 +128,107 @@ Set Chi(const Set& X, const Set& Y, const Int n, const Int b) {
   return chi;
 }
 
+Set Complement(const Set& X, const Int n) {
+  const auto R = iter::range(1, static_cast<int32_t>(4*n+1));
+  const auto RR = Set{R.begin(), R.end()};
+
+  Set Z;
+  std::set_difference(
+      RR.begin(), RR.end(),
+      X.begin(), X.end(),
+      std::inserter(Z, Z.begin()));
+  return Z;
+}
+
 std::vector<std::pair<Set, Set>> Disjoints(const Int n, const Int r) {
   const auto R = iter::range(1, static_cast<int32_t>(4*n+1));
   const auto RR = Set{R.begin(), R.end()};
   std::vector<std::pair<Set, Set>> ans;
 
   for (const auto& X : iter::combinations(R, r)) {
+    const auto XX = Set(X.begin(), X.end());
+    const auto Xc = Bar(XX, n);
     Set Z;
-    std::set_difference(
-      RR.begin(), RR.end(),
-      X.begin(), X.end(),
-      std::inserter(Z, Z.begin()));
+    std::set_intersection(
+        XX.begin(), XX.end(),
+        Xc.begin(), Xc.end(),
+        std::inserter(Z, Z.begin())
+    );
 
-    for (const auto& Y : iter::powerset(Z)) {
-      const auto XX = Set(X.begin(), X.end());
-      const auto YY = Set(Y.begin(), Y.end());
-      ans.emplace_back(XX, YY);
+    if (Z.size() == 0) {
+      ans.emplace_back(XX, Xc);
     }
   }
 
   return ans;
 }
 
+bool IsGood(
+    const Int n, const Int r,
+    const Set& I, const Set& J, const Set& K,
+    const Set& bI, const Set& bJ, const Set& bK,
+    Sets* s) {
+  // numAtMost = |I\cap [2n]| + |J\cap[2n]| + |K\cap[2n]|.
+  Int numAtMost = 0;
+  for (const auto& X : {I, J, K}) {
+    for (const auto& x : X) {
+      if (x <= 2*n) ++numAtMost;
+    }
+  }
+  if (numAtMost != r) return false;
+
+  const auto bIc = Complement(bI, n);
+  const auto bJc = Complement(bJ, n);
+  const auto bKc = Complement(bK, n);
+
+  const auto c1 = nlnum::lrcoef(
+      Tau(Chi(K, bKc, n, 0)),
+      Check(Tau(Chi(I, bIc, n, 0)), 4*n-2*r, r),
+      Check(Tau(Chi(J, bJc, n, 0)), 4*n-2*r, r));
+  if (c1 != 1) return false;
+
+  const auto c2 = nlnum::lrcoef(
+      Tau(Chi(K, bKc, n, 2)),
+      Check(Tau(Chi(I, bIc, n, 2)), r, r),
+      Check(Tau(Chi(J, bJc, n, 2)), r, r));
+  if (c2 != 1) return false;
+
+  if (s != nullptr) {
+    *s = {I, J, K, bI, bJ, bK};
+  }
+  return true;
+}
+
+std::vector<Sets> SatIneqs(const Int n, const Int r) {
+  const auto djs = Disjoints(n, r);
+  const auto RR = iter::range(1, static_cast<int32_t>(n)+1);
+  const std::vector<int32_t> Rv{RR.begin(), RR.end()};
+  const std::vector<Int> R{Rv.begin(), Rv.end()};
+  const Set S{R.begin(), R.end()};
+
+  std::vector<Sets> ans{};
+#pragma omp parallel for schedule(dynamic)
+  for (auto ita = djs.begin(); ita < djs.end(); ++ita) {
+    const auto& Iq = *ita;
+    const Set& I = Iq.first;
+    const Set& bI = Iq.second;
+    for (const auto& Jq : djs) {
+      const Set& J = Jq.first;
+      const Set& bJ = Jq.second;
+      for (const auto& Kq : djs) {
+        const Set& K = Kq.first;
+        const Set& bK = Kq.second;
+
+        Sets s;
+        if (IsGood(n, r, I, J, K, bI, bJ, bK, &s)) {
+#pragma omp critical
+          ans.push_back(s);
+        }
+      }
+    }
+  }
+
+  return ans;
+}
 
 }  // namespace saturation
