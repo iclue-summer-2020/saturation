@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <climits>
 #include <deque>
+#include <iterator>
 #include <iostream>
 #include <numeric>
 #include <ostream>
@@ -51,4 +52,33 @@ Set complement(const Set& I, const Int n) {
   return cI;
 }
 
+// Returns true iff lam is completely inside of mu.
+bool IsInside(const Partition& lam, const Partition& mu) {
+  if (lam.size() > mu.size()) return false;
+  for (size_t i = 0; i < lam.size(); ++i) {
+    if (lam[i] > mu[i]) return false;
+  }
+  return true;
+}
+
+Partition check(const Partition& lam, const Int a, const Int b) {
+  nlnum::ValidatePartitions({ lam });
+
+  Partition mu(b, a);
+  if (!IsInside(lam, mu)) {
+    throw std::invalid_argument("lam must be inside the rectangle (a^b).");
+  }
+
+  const Int k = lam.size();
+  const auto diff = static_cast<int32_t>(b >= k ? b-k : 0);
+  std::transform(
+      lam.rbegin(), lam.rend(),
+      mu.cbegin() + diff, mu.begin() + diff,
+      [&](const Int& x, const Int& y) -> Int { return y - x; });
+
+  while (mu[mu.size()-1] == 0) {
+    mu.pop_back();
+  }
+  return mu;
+}
 }  // namespace saturation
