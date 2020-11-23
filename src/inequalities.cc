@@ -3,6 +3,7 @@
 #include <nlnum/nlnum.h>
 #include <combinations.hpp>
 #include <prettyprint.hpp>
+#include <product.hpp>
 #include <range.hpp>
 
 #include <algorithm>
@@ -245,7 +246,7 @@ std::vector<Sets> SatIneqs(const Int n, const Int r) {
 int64_t Sum(const nlnum::Partition& pi, const Set& X, const Int n) {
   Int ans = 0;
   for (Int ii : X) {
-    if (ii > pi.size() || pi[ii - 1] > 2 * n) continue;
+    if (ii > pi.size() || ii > 2 * n) continue;
     ans += pi[ii - 1];
   }
   return static_cast<int64_t>(ans);
@@ -274,22 +275,45 @@ bool Satisfies(const Triple& triple, const std::vector<Sets>& satIneqs,
 }
 
 std::vector<CounterExample> Flagger(const Int n, const Int r) {
+  const auto get = [](const nlnum::PartitionsIn& pi) -> std::vector<Partition> {
+    std::vector<Partition> pars;
+    for (const auto& par : pi) {
+      pars.push_back(par);
+    }
+    return pars;
+  };
   const auto satIneqs = SatIneqs(n, r);
   const auto iPars = nlnum::PartitionsIn(Partition(n, n), n);
-  std::vector<Partition> pars;
-  for (const auto& par : iPars) {
-    pars.push_back(par);
+
+  const auto ins = iter::product<3>(iter::range(1, static_cast<int32_t>(n)+1));
+  std::vector<std::tuple<Int, Int, Int>> ns;
+  for (const auto& t : ins) {
+    const auto kl = std::get<0>(t);
+    const auto km = std::get<1>(t);
+    const auto kn = std::get<2>(t);
+    if ((kl + km + kn) % 2 == 1) continue;
+    ns.emplace_back(kl, km, kn);
   }
 
   std::vector<CounterExample> ans;
-#pragma omp parallel for schedule(dynamic) shared(pars)
-  for (auto la = pars.begin(); la < pars.end(); ++la) {
-    for (auto mu = pars.begin(); mu < pars.end(); ++mu) {
-      for (auto nu = pars.begin(); nu < pars.end(); ++nu) {
-        Sets s;
-        if (!Satisfies({*la, *mu, *nu}, satIneqs, n, &s)) {
+#pragma omp parallel for schedule(dynamic) shared(ins)
+  for (auto it = ns.begin(); it < ns.end(); ++it) {
+    const auto kl = std::get<0>(*it);
+    const auto km = std::get<1>(*it);
+    const auto kn = std::get<2>(*it);
+
+    const auto nls = get(nlnum::PartitionsIn(Partition(kl, kl), kl));
+    const auto nms = get(nlnum::PartitionsIn(Partition(km, km), km));
+    const auto nns = get(nlnum::PartitionsIn(Partition(kn, kn), kn));
+
+    for (auto la = nls.begin(); la < nls.end(); ++la) {
+      for (auto mu = nms.begin(); mu < nms.end(); ++mu) {
+        for (auto nu = nns.begin(); nu < nns.end(); ++nu) {
+          Sets s;
+          if (!Satisfies({*la, *mu, *nu}, satIneqs, n, &s)) {
 #pragma omp critical
-          ans.emplace_back(Triple{*la, *mu, *nu}, s);
+            ans.emplace_back(Triple{*la, *mu, *nu}, s);
+          }
         }
       }
     }
