@@ -74,6 +74,10 @@ Set Complement(const Set& X, const Int n);
 bool IsGood(const Int n, const Int r, const Set& I, const Set& J, const Set& K,
             const Set& bI, const Set& bJ, const Set& bK, Sets* s);
 
+// Helper function for `IsGood`.
+// I\cap[n+1,3n] \in {[3n-k, 3n] | k\geq 0}\cup\emptyset. For J and K too.
+bool Consecutive(const Int n, const Set& I, const Set& J, const Set& K);
+
 // Computes all of the sets in the saturation inequalities.
 std::vector<Sets> SatIneqs(const Int n, const Int r);
 

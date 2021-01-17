@@ -14,9 +14,12 @@ using nlnum::Partition;
 using saturation::Int;
 using saturation::Bar;
 using saturation::Check;
-using saturation::Chi;
+using saturation::Consecutive;
 using saturation::Disjoints;
+using saturation::Int;
+using saturation::IsGood;
 using saturation::Set;
+using saturation::Sets;
 using saturation::Tau;
 
 TEST_CASE("easy tau", "[tau]") {
@@ -191,4 +194,47 @@ TEST_CASE("edge case", "[disjoints]") {
   // At most (4n choose r) pairs.
   // So (4 choose 4) = 1.
   REQUIRE(djs.size() <= 1);
+}
+
+TEST_CASE("conditions", "[good]") {
+  const Int n = 2;
+  const Int r = 1;
+  Sets s{{2}, {7}, {8}, {7}, {2}, {1}};
+
+  // 1. |I\cap[2n]| + |J\cap[2n]| + |K\cap[2n]| = 1 + 0 + 0 = 1 = r. (good).
+  // 2. I\cap[n+1,3n]=J\cap[n+1,3n]=K\cap[n+1,3n]=\emptyset (good).
+  // 3. lrcoefs are all 1.
+  const bool good = IsGood(n, r, s.I, s.J, s.K, s.bI, s.bJ, s.bK, nullptr);
+  REQUIRE(good);
+}
+
+TEST_CASE("fine", "[consecutive]") {
+  const Int n = 2;
+  Set I = {2};
+  Set J = {7};
+  Set K = {8};
+  // I\cap[n+1,3n]=J\cap[n+1,3n]=K\cap[n+1,3n]=\emptyset (good).
+  REQUIRE(Consecutive(n, I, J, K));
+}
+
+TEST_CASE("fine; more tricky", "[consecutive]") {
+  const Int n = 2;
+  Set I = {4, 5, 6, 8};
+  Set J = {6, 7};
+  Set K = {2};
+  // I\cap[n+1,3n]= {4,5,6} (good).
+  // J\cap[n+1,3n]= {6} (good).
+  // K\cap[n+1,3n]=\emptyset (good).
+  REQUIRE(Consecutive(n, I, J, K));
+}
+
+TEST_CASE("bad", "[consecutive]") {
+  const Int n = 2;
+  Set I = {3, 4, 6, 8};
+  Set J = {};
+  Set K = {};
+  // I\cap[n+1,3n]= {4,6}  (bad!).
+  // J\cap[n+1,3n]=\emptyset (good).
+  // K\cap[n+1,3n]=\emptyset (good).
+  REQUIRE(!Consecutive(n, I, J, K));
 }

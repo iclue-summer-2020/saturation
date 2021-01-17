@@ -163,8 +163,7 @@ std::vector<std::pair<Set, Set>> Disjoints(const Int n, const Int r) {
     Set Z;
     std::set_intersection(
         XX.begin(), XX.end(), bX.begin(), bX.end(),
-        std::inserter(Z, Z.begin())
-    );
+                          std::inserter(Z, Z.begin()));
 
     if (Z.size() == 0) {
       ans.emplace_back(XX, bX);
@@ -174,36 +173,62 @@ std::vector<std::pair<Set, Set>> Disjoints(const Int n, const Int r) {
   return ans;
 }
 
-bool IsGood(
-    const Int n, const Int r,
-    const Set& I, const Set& J, const Set& K,
-    const Set& bI, const Set& bJ, const Set& bK,
-    Sets* s) {
+bool RestrictedLengths(const Int n, const Int r, const Set& I, const Set& J,
+                       const Set& K) {
+  // |I\cap [2n]| + |J\cap[2n]| + |K\cap[2n]| = r
   // numAtMost = |I\cap [2n]| + |J\cap[2n]| + |K\cap[2n]|.
   Int numAtMost = 0;
   for (const auto& X : {I, J, K}) {
     for (const auto& x : X) {
-      if (x <= 2*n) ++numAtMost;
+      if (x <= 2 * n) ++numAtMost;
     }
   }
-  if (numAtMost != r) return false;
+  return numAtMost == r;
+}
 
+bool Consecutive(const Int n, const Set& I, const Set& J, const Set& K) {
+  for (const auto& X : {I, J, K}) {
+    std::set<Int> sX;
+    for (const auto& x : X) {
+      if (n + 1 <= x && x <= 3 * n) sX.insert(x);
+    }
+    Int count = 0;
+    // We know all the numbers in I,J,K are strictly greater than 0.
+    for (Int k = 3 * n; k > 0; --k) {
+      if (sX.find(k) == sX.end()) break;
+      ++count;
+    }
+    if (count != sX.size()) return false;
+  }
+  return true;
+}
+
+bool GoodLrCoefs(const Int n, const Int r, const Set& I, const Set& J,
+                 const Set& K, const Set& bI, const Set& bJ, const Set& bK) {
+  // lrcoefs = 1.
   const auto bIc = Complement(bI, n);
   const auto bJc = Complement(bJ, n);
   const auto bKc = Complement(bK, n);
 
   const auto c1 = nlnum::lrcoef(
-      Tau(Chi(K, bKc, n, 0)),
-      Check(Tau(Chi(I, bIc, n, 0)), 4*n-2*r, r),
-      Check(Tau(Chi(J, bJc, n, 0)), 4*n-2*r, r));
+      Tau(Chi(K, bKc, n, 0)), Check(Tau(Chi(I, bIc, n, 0)), 4 * n - 2 * r, r),
+      Check(Tau(Chi(J, bJc, n, 0)), 4 * n - 2 * r, r));
   if (c1 != 1) return false;
 
-  const auto c2 = nlnum::lrcoef(
-      Tau(Chi(K, bKc, n, 2)),
-      Check(Tau(Chi(I, bIc, n, 2)), r, r),
-      Check(Tau(Chi(J, bJc, n, 2)), r, r));
+  const auto c2 =
+      nlnum::lrcoef(Tau(Chi(K, bKc, n, 2)), Check(Tau(Chi(I, bIc, n, 2)), r, r),
+                    Check(Tau(Chi(J, bJc, n, 2)), r, r));
   if (c2 != 1) return false;
 
+  return true;
+}
+
+bool IsGood(const Int n, const Int r, const Set& I, const Set& J, const Set& K,
+            const Set& bI, const Set& bJ, const Set& bK, Sets* s) {
+  // Three conditions from the paper Shiliang sent.
+  if (!RestrictedLengths(n, r, I, J, K)) return false;
+  if (!Consecutive(n, I, J, K)) return false;
+  if (!GoodLrCoefs(n, r, I, J, K, bI, bJ, bK)) return false;
   if (s != nullptr) {
     *s = {I, J, K, bI, bJ, bK};
   }
